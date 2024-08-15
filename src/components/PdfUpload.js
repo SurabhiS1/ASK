@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 const PdfUpload = () => {
   const [file, setFile] = useState(null);
   const [extractedText, setExtractedText] = useState('');
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -38,6 +40,31 @@ const PdfUpload = () => {
     }
   };
 
+  const handleQuestionSubmit = (event) => {
+    event.preventDefault();
+
+    fetch('http://localhost:5000/ask', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ question, text: extractedText }),
+    })
+    .then(async (response) => {
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      setAnswer(data.answer);
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+  };
+
   return (
     <div style={{ textAlign: 'center', paddingTop: '50px' }}>
     <form onSubmit={handleSubmit}>
@@ -46,6 +73,7 @@ const PdfUpload = () => {
       <button type="submit">Submit</button>
     </form>
     {extractedText && (
+      <>
      <div style={{
         width: '80%',
         margin: '0 auto',
@@ -62,6 +90,53 @@ const PdfUpload = () => {
       }}>
         {extractedText.split('\n').join('\n')}
       </div>
+      <form onSubmit={handleQuestionSubmit} style={{ marginTop: '20px' }}>
+      <input
+        type="text"
+        placeholder="Enter your question"
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        style={{
+          padding: '10px',
+          width: '60%',
+          borderRadius: '5px',
+          border: '1px solid #ccc',
+          fontSize: '16px',
+          marginBottom: '10px',
+        }}
+      />
+      <button
+        type="submit"
+        style={{
+          padding: '10px 20px',
+          marginLeft: '10px',
+          backgroundColor: '#007bff',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          fontSize: '16px',
+        }}
+      >
+        Ask
+      </button>
+    </form>
+
+    {answer && (
+      <div style={{
+        marginTop: '20px',
+        padding: '20px',
+        backgroundColor: '#e9ecef',
+        borderRadius: '5px',
+        textAlign: 'left',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '16px',
+        lineHeight: '1.5',
+      }}>
+        <strong>Answer:</strong> {answer}
+      </div>
+    )}
+    </>
     )}
      </div>
   );
